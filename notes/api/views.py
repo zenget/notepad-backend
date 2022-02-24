@@ -1,5 +1,6 @@
 from rest_framework import viewsets
 from notes.api.serializers import (NoteSerializer)
+from django.db.models import Q
 from notes.models import (Note)
 
 
@@ -9,8 +10,11 @@ class NoteSerializerViewSet(viewsets.ModelViewSet):
     serializer_class = NoteSerializer
 
     def get_queryset(self):
-        owner = self.request.query_params.get('owner')
-        if owner is not None:
-            return Note.objects.filter(owner=owner)
+        search_key = self.request.query_params.get('searchKey')
 
-        return Note.objects.all()
+        filters = Q()
+        if(search_key is not None and search_key != ''):
+            filters &= (Q(title__contains=search_key) | Q(
+                owner__contains=search_key))
+
+        return Note.objects.filter(filters)
